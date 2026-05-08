@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: mart_brewery_stats
+    description: Analytics-ready state-level brewery summary metrics.
+    columns:
+      - name: state
+        description: State or province for the brewery population being aggregated.
+        tests:
+          - not_null
+      - name: total_breweries
+        description: Total number of breweries in the state.
+        tests:
+          - not_null
+      - name: micro_breweries
+        description: Number of micro breweries in the state.
+      - name: nano_breweries
+        description: Number of nano breweries in the state.
+      - name: regional_breweries
+        description: Number of regional breweries in the state.
+      - name: brewpub_breweries
+        description: Number of brewpub breweries in the state.
+      - name: large_breweries
+        description: Number of large breweries in the state.
+      - name: planning_breweries
+        description: Number of breweries in planning in the state.
+      - name: bar_breweries
+        description: Number of bar records in the state.
+      - name: contract_breweries
+        description: Number of contract breweries in the state.
+      - name: proprietor_breweries
+        description: Number of proprietor breweries in the state.
+      - name: closed_breweries
+        description: Number of closed breweries in the state.
+      - name: pct_with_websites
+        description: Percentage of breweries in the state with website URLs.
+      - name: pct_with_coordinates
+        description: Percentage of breweries in the state with both latitude and longitude.

@@ -1,0 +1,57 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Raw brewery data loaded from Open Brewery DB API responses.
+    database: "{{ env_var('GCP_PROJECT_ID') }}"
+    schema: "{{ env_var('BIGQUERY_DATASET', 'raw') }}"
+    tables:
+      - name: breweries
+        description: Full-refresh raw brewery table with one row per API record.
+        columns:
+          - name: id
+            description: Unique Open Brewery DB identifier for the brewery.
+            tests:
+              - not_null
+          - name: name
+            description: Brewery name as returned by the API.
+            tests:
+              - not_null
+          - name: brewery_type
+            description: Brewery category as returned by the API.
+          - name: ingestion_timestamp
+            description: Timestamp when the record was loaded into BigQuery.
+
+models:
+  - name: stg_breweries
+    description: Typed staging view for raw Open Brewery DB records.
+    columns:
+      - name: brewery_id
+        description: Unique Open Brewery DB identifier for the brewery.
+        tests:
+          - not_null
+      - name: brewery_name
+        description: Clean brewery name used in downstream models.
+        tests:
+          - not_null
+      - name: brewery_type
+        description: Lowercase brewery category.
+        tests:
+          - accepted_values:
+              values:
+                - micro
+                - nano
+                - regional
+                - brewpub
+                - large
+                - planning
+                - bar
+                - contract
+                - proprietor
+                - closed
+      - name: latitude
+        description: Brewery latitude as a floating point value.
+      - name: longitude
+        description: Brewery longitude as a floating point value.
+      - name: loaded_at
+        description: Timestamp when the staging model processed the record.

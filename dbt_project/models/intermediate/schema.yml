@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: int_breweries_cleaned
+    description: Deduplicated and standardized US brewery records for analytics.
+    columns:
+      - name: brewery_id
+        description: Unique Open Brewery DB identifier for the brewery.
+        tests:
+          - not_null
+          - unique
+      - name: brewery_name
+        description: Brewery name after staging filters.
+        tests:
+          - not_null
+      - name: brewery_type
+        description: Lowercase standardized brewery category.
+        tests:
+          - accepted_values:
+              values:
+                - micro
+                - nano
+                - regional
+                - brewpub
+                - large
+                - planning
+                - bar
+                - contract
+                - proprietor
+                - closed
+      - name: country
+        description: Country name, filtered to United States records.
+      - name: has_coordinates
+        description: Boolean flag indicating whether both latitude and longitude are present.

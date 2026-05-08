@@ -1,0 +1,22 @@
+.env
+gcp-credentials.json
+gcp-key.json
+*.json
+service-account*.json
+
+# python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# airflow
+logs/
+plugins/
+
+# dbt
+dbt_project/target/
+dbt_project/dbt_packages/
+
+# great expectations
+great_expectations/uncommitted/

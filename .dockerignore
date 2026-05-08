@@ -1,0 +1,11 @@
+.git
+.github
+.env
+logs
+plugins
+__pycache__
+*.pyc
+target
+dbt_packages
+great_expectations/uncommitted
+gcp-key.json
