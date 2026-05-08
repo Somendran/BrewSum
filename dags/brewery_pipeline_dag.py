@@ -1,4 +1,7 @@
-"""Airflow DAG for the BrewSum brewery ELT batch pipeline."""
+"""Airflow DAG for the BrewSum brewery ELT batch pipeline.
+
+This DAG is intended for local non-Docker Airflow execution, preferably from WSL2.
+"""
 
 from __future__ import annotations
 
@@ -9,9 +12,22 @@ from pathlib import Path
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 
-PROJECT_HOME = Path(os.getenv("BREWSUM_HOME", Path(__file__).resolve().parents[1])).as_posix()
+PROJECT_HOME = Path(os.getenv("BREWSUM_PROJECT_DIR", "/mnt/d/BrewSum")).as_posix()
 DBT_PROJECT_DIR = f"{PROJECT_HOME}/dbt_project"
-PYTHON_BIN = os.getenv("BREWSUM_PYTHON_BIN", "python")
+PYTHON_BIN = "python"
+DBT_BIN = "dbt"
+
+TASK_ENV = {
+    name: os.getenv(name, "")
+    for name in [
+        "GCP_PROJECT_ID",
+        "GCS_BUCKET_NAME",
+        "BIGQUERY_DATASET",
+        "DBT_DATASET",
+        "BIGQUERY_LOCATION",
+        "GOOGLE_APPLICATION_CREDENTIALS",
+    ]
+}
 
 default_args = {
     "owner": "data-engineering",
@@ -38,6 +54,8 @@ with DAG(
             '--run-date "{{ ds }}"'
         ),
         cwd=PROJECT_HOME,
+        env=TASK_ENV,
+        append_env=True,
     )
 
     load_task = BashOperator(
@@ -47,24 +65,32 @@ with DAG(
             '--run-date "{{ ds }}"'
         ),
         cwd=PROJECT_HOME,
+        env=TASK_ENV,
+        append_env=True,
     )
 
     dbt_run_task = BashOperator(
         task_id="dbt_run_task",
-        bash_command="dbt run --profiles-dir .",
+        bash_command=f"{DBT_BIN} run --profiles-dir .",
         cwd=DBT_PROJECT_DIR,
+        env=TASK_ENV,
+        append_env=True,
     )
 
     dbt_test_task = BashOperator(
         task_id="dbt_test_task",
-        bash_command="dbt test --profiles-dir .",
+        bash_command=f"{DBT_BIN} test --profiles-dir .",
         cwd=DBT_PROJECT_DIR,
+        env=TASK_ENV,
+        append_env=True,
     )
 
     ge_validation_task = BashOperator(
         task_id="ge_validation_task",
         bash_command=f"{PYTHON_BIN} great_expectations/validate.py",
         cwd=PROJECT_HOME,
+        env=TASK_ENV,
+        append_env=True,
     )
 
     extract_task >> load_task >> dbt_run_task >> dbt_test_task >> ge_validation_task

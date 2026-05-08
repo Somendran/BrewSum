@@ -178,7 +178,65 @@ The DAG file is kept at `dags/brewery_pipeline_dag.py` and represents this flow:
 extract -> load -> dbt_run -> dbt_test -> great_expectations_validate
 ```
 
-Airflow will be added as a local non-packaged orchestration layer in Phase 2. When configured, set `BREWSUM_HOME=D:\BrewSum` if Airflow cannot infer the project root from the DAG location.
+Phase 2 uses local Apache Airflow from WSL2 Ubuntu. The recommended WSL project path is:
+
+```bash
+/mnt/d/BrewSum
+```
+
+Create an Airflow virtual environment in WSL:
+
+```bash
+cd /mnt/d/BrewSum
+python3 -m venv airflow_venv
+source airflow_venv/bin/activate
+pip install -r requirements.txt
+```
+
+Configure Airflow for local execution:
+
+```bash
+export AIRFLOW_HOME=/mnt/d/BrewSum/airflow_home
+export BREWSUM_PROJECT_DIR=/mnt/d/BrewSum
+export GCP_PROJECT_ID=brewsum
+export GCS_BUCKET_NAME=brewsum-raw
+export BIGQUERY_DATASET=raw
+export DBT_DATASET=dbt_brewery
+export BIGQUERY_LOCATION=us-central1
+export GOOGLE_APPLICATION_CREDENTIALS=/mnt/d/BrewSum/gcp-credentials.json
+```
+
+Initialize Airflow and create an admin user:
+
+```bash
+airflow db migrate
+airflow users create \
+  --username admin \
+  --firstname BrewSum \
+  --lastname Admin \
+  --role Admin \
+  --email your-email@example.com \
+  --password admin
+```
+
+Point Airflow at the project DAGs folder. One simple local option is to symlink the project DAG into `AIRFLOW_HOME`:
+
+```bash
+mkdir -p "$AIRFLOW_HOME/dags"
+ln -sf /mnt/d/BrewSum/dags/brewery_pipeline_dag.py "$AIRFLOW_HOME/dags/brewery_pipeline_dag.py"
+```
+
+Start the scheduler and webserver in separate WSL terminals with the same environment variables loaded:
+
+```bash
+airflow scheduler
+```
+
+```bash
+airflow webserver --port 8080
+```
+
+Open `http://localhost:8080`, enable `brewery_elt_pipeline`, and trigger a DAG run. No additional runtime packaging is used.
 
 ## CI/CD
 

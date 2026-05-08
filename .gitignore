@@ -16,6 +16,7 @@ venv/
 # airflow
 logs/
 airflow_home/
+airflow_venv/
 plugins/
 
 # dbt
