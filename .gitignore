@@ -2,6 +2,7 @@
 gcp-credentials.json
 gcp-key.json
 *.json
+!great_expectations/expectations/*.json
 service-account*.json
 
 # python
@@ -9,12 +10,16 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .mypy_cache/
+venv/
+.venv/
 
 # airflow
 logs/
+airflow_home/
 plugins/
 
 # dbt
+dbt_project/.user.yml
 dbt_project/target/
 dbt_project/dbt_packages/
 

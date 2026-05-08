@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 
-PROJECT_HOME = "/opt/airflow"
+PROJECT_HOME = Path(os.getenv("BREWSUM_HOME", Path(__file__).resolve().parents[1])).as_posix()
 DBT_PROJECT_DIR = f"{PROJECT_HOME}/dbt_project"
+PYTHON_BIN = os.getenv("BREWSUM_PYTHON_BIN", "python")
 
 default_args = {
     "owner": "data-engineering",
@@ -32,38 +34,37 @@ with DAG(
     extract_task = BashOperator(
         task_id="extract_task",
         bash_command=(
-            "python /opt/airflow/ingestion/extract.py "
+            f"{PYTHON_BIN} ingestion/extract.py "
             '--run-date "{{ ds }}"'
         ),
+        cwd=PROJECT_HOME,
     )
 
     load_task = BashOperator(
         task_id="load_task",
         bash_command=(
-            "python /opt/airflow/ingestion/load.py "
+            f"{PYTHON_BIN} ingestion/load.py "
             '--run-date "{{ ds }}"'
         ),
+        cwd=PROJECT_HOME,
     )
 
     dbt_run_task = BashOperator(
         task_id="dbt_run_task",
-        bash_command=(
-            f"cd {DBT_PROJECT_DIR} && "
-            f"dbt run --project-dir {DBT_PROJECT_DIR} --profiles-dir {DBT_PROJECT_DIR}"
-        ),
+        bash_command="dbt run --profiles-dir .",
+        cwd=DBT_PROJECT_DIR,
     )
 
     dbt_test_task = BashOperator(
         task_id="dbt_test_task",
-        bash_command=(
-            f"cd {DBT_PROJECT_DIR} && "
-            f"dbt test --project-dir {DBT_PROJECT_DIR} --profiles-dir {DBT_PROJECT_DIR}"
-        ),
+        bash_command="dbt test --profiles-dir .",
+        cwd=DBT_PROJECT_DIR,
     )
 
     ge_validation_task = BashOperator(
         task_id="ge_validation_task",
-        bash_command="python /opt/airflow/great_expectations/validate.py",
+        bash_command=f"{PYTHON_BIN} great_expectations/validate.py",
+        cwd=PROJECT_HOME,
     )
 
     extract_task >> load_task >> dbt_run_task >> dbt_test_task >> ge_validation_task

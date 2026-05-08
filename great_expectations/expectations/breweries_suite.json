@@ -1,0 +1,50 @@
+{
+  "expectation_suite_name": "breweries_suite",
+  "ge_cloud_id": null,
+  "expectations": [
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "id"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": {
+        "column": "name"
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_table_row_count_to_be_between",
+      "kwargs": {
+        "min_value": 7000,
+        "max_value": 15000
+      },
+      "meta": {}
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_in_set",
+      "kwargs": {
+        "column": "brewery_type",
+        "value_set": [
+          "micro",
+          "nano",
+          "regional",
+          "brewpub",
+          "large",
+          "planning",
+          "bar",
+          "contract",
+          "proprietor",
+          "closed"
+        ]
+      },
+      "meta": {}
+    }
+  ],
+  "meta": {
+    "great_expectations_version": "0.18.21"
+  }
+}

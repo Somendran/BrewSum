@@ -1,23 +1,23 @@
-DOCKER_COMPOSE ?= docker compose
-AIRFLOW_SERVICE ?= airflow-worker
-DBT_DIR ?= /opt/airflow/dbt_project
+RUN_DATE ?= 2026-05-08
 
-.PHONY: up down logs dbt-run dbt-test validate
+.PHONY: install extract load dbt-run dbt-test validate run-all
 
-up:
-	$(DOCKER_COMPOSE) up -d
+install:
+	pip install -r requirements.txt
 
-down:
-	$(DOCKER_COMPOSE) down
+extract:
+	python ingestion/extract.py --run-date $(RUN_DATE)
 
-logs:
-	$(DOCKER_COMPOSE) logs -f
+load:
+	python ingestion/load.py --run-date $(RUN_DATE)
 
 dbt-run:
-	$(DOCKER_COMPOSE) exec $(AIRFLOW_SERVICE) bash -lc "cd $(DBT_DIR) && dbt run --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)"
+	cd dbt_project && dbt run --profiles-dir .
 
 dbt-test:
-	$(DOCKER_COMPOSE) exec $(AIRFLOW_SERVICE) bash -lc "cd $(DBT_DIR) && dbt test --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)"
+	cd dbt_project && dbt test --profiles-dir .
 
 validate:
-	$(DOCKER_COMPOSE) exec $(AIRFLOW_SERVICE) python /opt/airflow/great_expectations/validate.py
+	python great_expectations/validate.py
+
+run-all: extract load dbt-run dbt-test validate

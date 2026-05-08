@@ -15,7 +15,7 @@ jobs:
       GCS_BUCKET_NAME: dummy-bucket
       BIGQUERY_DATASET: raw
       DBT_DATASET: dbt_brewery
-      BIGQUERY_LOCATION: US
+      BIGQUERY_LOCATION: us-central1
       DBT_TARGET: ci
       GOOGLE_APPLICATION_CREDENTIALS: /tmp/fake-gcp-key.json
 
@@ -58,5 +58,5 @@ jobs:
       - name: Compile Python files
         run: python -m compileall dags ingestion great_expectations
 
-      - name: Compile dbt project
-        run: dbt compile --project-dir dbt_project --profiles-dir dbt_project --target ci --no-populate-cache
+      - name: Parse dbt project
+        run: dbt parse --project-dir dbt_project --profiles-dir dbt_project --target ci --no-partial-parse

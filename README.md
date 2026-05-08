@@ -5,9 +5,8 @@
 ![dbt](https://img.shields.io/badge/dbt-core-FF694B)
 ![BigQuery](https://img.shields.io/badge/warehouse-BigQuery-4285F4)
 ![Great Expectations](https://img.shields.io/badge/data%20quality-Great%20Expectations-FF6319)
-![Docker](https://img.shields.io/badge/runtime-Docker-2496ED)
 
-A production-style local ELT batch pipeline for Open Brewery DB data using GCS, BigQuery, dbt, Great Expectations, and Airflow.
+A production-style ELT batch pipeline using Python, GCS, BigQuery, dbt Core, Great Expectations, and Apache Airflow for orchestration.
 
 ## Architecture
 
@@ -15,13 +14,13 @@ A production-style local ELT batch pipeline for Open Brewery DB data using GCS, 
 Open Brewery DB API
         |
         v
-ingestion/extract.py
+Python extract job
         |
         v
 GCS data lake: raw/breweries/YYYY-MM-DD/breweries.json
         |
         v
-ingestion/load.py
+Python load job
         |
         v
 BigQuery raw.breweries
@@ -33,19 +32,23 @@ dbt staging -> dbt intermediate -> dbt marts
 BigQuery mart_brewery_stats
         |
         v
-Great Expectations HTML validation report
+Great Expectations validation report
 
-Airflow DAG brewery_elt_pipeline orchestrates the full path daily.
+Apache Airflow will orchestrate this flow in Phase 2.
 ```
+
+## Roadmap
+
+- Phase 1: Run the pipeline manually using Python, dbt, and Great Expectations.
+- Phase 2: Add local Apache Airflow orchestration without additional runtime packaging.
+- Phase 3: Polish portfolio documentation, screenshots, and resume bullets.
 
 ## Prerequisites
 
-- Docker and Docker Compose.
-- GNU Make, or run the Docker Compose commands directly.
+- Python 3.11.
 - A Google Cloud project with BigQuery enabled.
 - A GCS bucket created ahead of time.
 - A service account JSON key with permissions to read/write the bucket and create/load BigQuery tables.
-- Python 3.11 for local syntax checks outside Docker.
 
 Recommended IAM permissions for the service account:
 
@@ -55,95 +58,94 @@ Recommended IAM permissions for the service account:
 
 ## Setup
 
-1. Copy the environment file.
+Create and activate a virtual environment from PowerShell:
 
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Edit `.env` with your GCP values.
-
-   ```bash
-   GCP_PROJECT_ID=your-project-id
-   GCS_BUCKET_NAME=your-bucket-name
-   BIGQUERY_DATASET=raw
-   DBT_DATASET=dbt_brewery
-   BIGQUERY_LOCATION=US
-   GOOGLE_APPLICATION_CREDENTIALS=./gcp-key.json
-   AIRFLOW_UID=50000
-   AIRFLOW_FAILURE_EMAIL=alerts@example.com
-   ```
-
-3. Place the service account key at the path referenced by `GOOGLE_APPLICATION_CREDENTIALS`.
-
-4. Build and start Airflow.
-
-   ```bash
-   make up
-   ```
-
-5. Open Airflow at `http://localhost:8080`.
-
-   Default local credentials:
-
-   - Username: `admin`
-   - Password: `admin`
-
-## Run Locally
-
-Run the whole pipeline from Airflow by triggering the `brewery_elt_pipeline` DAG.
-
-The DAG runs these tasks in order:
-
-1. `extract_task`
-2. `load_task`
-3. `dbt_run_task`
-4. `dbt_test_task`
-5. `ge_validation_task`
-
-## Run Components Individually
-
-Run extraction for a specific partition date:
-
-```bash
-docker compose exec airflow-worker python /opt/airflow/ingestion/extract.py --run-date 2026-05-08
+```powershell
+cd D:\BrewSum
+python -m venv venv
+venv\Scripts\activate
 ```
 
-Run the raw BigQuery load:
+Install dependencies:
 
-```bash
-docker compose exec airflow-worker python /opt/airflow/ingestion/load.py --run-date 2026-05-08
+```powershell
+pip install -r requirements.txt
 ```
 
-Run dbt models:
+Copy the sample environment file and edit `.env` with your values:
 
-```bash
-make dbt-run
+```powershell
+Copy-Item .env.example .env
 ```
 
-Run dbt tests:
+Required `.env` variables:
 
-```bash
-make dbt-test
+```text
+GCP_PROJECT_ID=brewsum
+GCS_BUCKET_NAME=brewsum-raw
+BIGQUERY_DATASET=raw
+DBT_DATASET=dbt_brewery
+BIGQUERY_LOCATION=us-central1
+GOOGLE_APPLICATION_CREDENTIALS=./gcp-credentials.json
+AIRFLOW_UID=50000
+AIRFLOW_FAILURE_EMAIL=<your-email>
+```
+
+Place your service account key at the path referenced by `GOOGLE_APPLICATION_CREDENTIALS`.
+
+## Manual Local Run
+
+Run extraction:
+
+```powershell
+python ingestion/extract.py --run-date 2026-05-08
+```
+
+Load raw data into BigQuery:
+
+```powershell
+python ingestion/load.py --run-date 2026-05-08
+```
+
+Run dbt models and tests:
+
+```powershell
+cd dbt_project
+dbt run --profiles-dir .
+dbt test --profiles-dir .
+cd ..
 ```
 
 Run Great Expectations validation:
 
-```bash
+```powershell
+python great_expectations/validate.py
+```
+
+## Make Targets
+
+These targets are thin wrappers around the same local commands:
+
+```powershell
+make install
+make extract RUN_DATE=2026-05-08
+make load RUN_DATE=2026-05-08
+make dbt-run
+make dbt-test
 make validate
+make run-all RUN_DATE=2026-05-08
 ```
 
-Follow Airflow logs:
+If Make is not available on Windows, use the manual PowerShell commands above.
 
-```bash
-make logs
-```
+## Expected Output
 
-Stop the stack:
-
-```bash
-make down
-```
+- Raw brewery data extracted from Open Brewery DB API.
+- Raw files uploaded to GCS.
+- Raw BigQuery tables created and populated.
+- dbt models created in the `dbt_brewery` dataset family.
+- dbt tests pass.
+- Great Expectations validation passes.
 
 ## dbt Models
 
@@ -151,7 +153,7 @@ make down
 - `int_breweries_cleaned`: keeps one row per brewery ID, standardizes `brewery_type`, filters to United States breweries, and adds `has_coordinates`.
 - `mart_brewery_stats`: aggregates brewery counts by state, including brewery type counts and website/coordinate coverage percentages.
 
-dbt creates layer-specific datasets using the configured `DBT_DATASET` prefix. For example, with `DBT_DATASET=dbt_brewery`, BigQuery objects are created in datasets such as `dbt_brewery_staging`, `dbt_brewery_intermediate`, and `dbt_brewery_marts`.
+dbt creates layer-specific datasets using the configured `DBT_DATASET` prefix. With `DBT_DATASET=dbt_brewery`, objects are created in datasets such as `dbt_brewery_staging`, `dbt_brewery_intermediate`, and `dbt_brewery_marts`.
 
 ## Data Quality
 
@@ -168,22 +170,38 @@ HTML reports are written under:
 great_expectations/uncommitted/data_docs/local_site/validations/
 ```
 
+## Airflow
+
+The DAG file is kept at `dags/brewery_pipeline_dag.py` and represents this flow:
+
+```text
+extract -> load -> dbt_run -> dbt_test -> great_expectations_validate
+```
+
+Airflow will be added as a local non-packaged orchestration layer in Phase 2. When configured, set `BREWSUM_HOME=D:\BrewSum` if Airflow cannot infer the project root from the DAG location.
+
 ## CI/CD
 
-The GitHub Actions workflow installs pinned dependencies, compiles Python files, and runs `dbt compile` with an offline dummy BigQuery service account key. It does not touch BigQuery or GCS.
+GitHub Actions performs lightweight checks:
 
-Full `dbt test` execution requires a real BigQuery connection and should be run locally or in credentialed CI after adding secure GitHub secrets.
+- Check out the repository.
+- Set up Python 3.11.
+- Install pinned dependencies.
+- Compile Python files.
+- Parse the dbt project with a temporary fake service account file, without calling GCP.
+
+Full `dbt test` and Great Expectations validation require real GCP credentials and should be run locally after `.env` is configured.
 
 ## Known Limitations
 
 - The GCS bucket must already exist.
 - Airflow email alerts require SMTP settings in addition to `AIRFLOW_FAILURE_EMAIL`.
-- This project uses full refresh loads only; it does not implement incremental source capture.
-- CI is syntax-oriented and intentionally avoids live cloud calls.
+- This project uses full-refresh loads only.
+- CI intentionally avoids live cloud calls.
 
 ## Future Improvements
 
-- Add Terraform for GCS bucket, service account, and BigQuery dataset provisioning.
-- Add partitioning or ingestion-date history to the raw BigQuery table.
-- Add observability metrics for record counts, API latency, and task duration.
-- Add a credentialed CI environment for live dbt tests and Great Expectations validation.
+- Add infrastructure-as-code for GCS, service account, and BigQuery dataset provisioning.
+- Add ingestion-date history to the raw BigQuery table.
+- Add screenshots of BigQuery tables, dbt lineage, and validation reports.
+- Add portfolio-ready summary bullets and operational runbook notes.
