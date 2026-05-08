@@ -6,7 +6,7 @@ import argparse
 import json
 import logging
 import os
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from dotenv import load_dotenv
@@ -111,7 +111,7 @@ def load_breweries_to_bigquery(
     table_id = f"{dataset_id}.breweries"
     ensure_dataset(client, dataset_id, location)
 
-    ingestion_timestamp = datetime.now(UTC).isoformat()
+    ingestion_timestamp = datetime.now(timezone.utc).isoformat()
     rows = [normalize_record(record, ingestion_timestamp) for record in records]
     schema = [bigquery.SchemaField(column, "STRING", mode="NULLABLE") for column in RAW_COLUMNS]
     schema.append(bigquery.SchemaField("ingestion_timestamp", "TIMESTAMP", mode="REQUIRED"))

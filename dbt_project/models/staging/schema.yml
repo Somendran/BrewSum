@@ -49,6 +49,10 @@ models:
                 - contract
                 - proprietor
                 - closed
+                - taproom
+                - cidery
+                - beergarden
+                - location
       - name: latitude
         description: Brewery latitude as a floating point value.
       - name: longitude

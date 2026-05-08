@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -85,7 +85,7 @@ def run_expectations(dataframe: pd.DataFrame, suite: dict[str, Any]) -> Expectat
         suite_name=suite["expectation_suite_name"],
         statistics=statistics,
         meta={
-            "run_id": datetime.now(UTC).isoformat(),
+            "run_id": datetime.now(timezone.utc).isoformat(),
             "validation_target": "raw.breweries",
         },
     )
@@ -94,7 +94,7 @@ def run_expectations(dataframe: pd.DataFrame, suite: dict[str, Any]) -> Expectat
 def write_html_report(validation_result: ExpectationSuiteValidationResult) -> Path:
     """Render and write a local HTML validation report."""
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
-    report_path = REPORT_DIR / f"breweries_suite_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}.html"
+    report_path = REPORT_DIR / f"breweries_suite_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}.html"
     rendered_document = ValidationResultsPageRenderer().render(validation_result)
     html = DefaultJinjaPageView().render(rendered_document)
     report_path.write_text(html, encoding="utf-8")

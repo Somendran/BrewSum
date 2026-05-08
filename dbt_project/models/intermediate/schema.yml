@@ -28,6 +28,10 @@ models:
                 - contract
                 - proprietor
                 - closed
+                - taproom
+                - cidery
+                - beergarden
+                - location
       - name: country
         description: Country name, filtered to United States records.
       - name: has_coordinates
