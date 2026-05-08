@@ -38,13 +38,17 @@
           "bar",
           "contract",
           "proprietor",
-          "closed"
+          "closed",
+          "taproom",
+          "cidery",
+          "beergarden",
+          "location"
         ]
       },
       "meta": {}
     }
   ],
   "meta": {
-    "great_expectations_version": "0.18.21"
+    "great_expectations_version": "0.18.0"
   }
 }

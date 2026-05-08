@@ -82,9 +82,9 @@ def run_expectations(dataframe: pd.DataFrame, suite: dict[str, Any]) -> Expectat
     return ExpectationSuiteValidationResult(
         success=success,
         results=results,
-        suite_name=suite["expectation_suite_name"],
         statistics=statistics,
         meta={
+            "expectation_suite_name": suite.get("expectation_suite_name", "breweries_suite"),
             "run_id": datetime.now(timezone.utc).isoformat(),
             "validation_target": "raw.breweries",
         },
