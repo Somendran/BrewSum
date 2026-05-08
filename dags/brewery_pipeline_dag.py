@@ -1,6 +1,6 @@
 """Airflow DAG for the BrewSum brewery ELT batch pipeline.
 
-This DAG is intended for local non-Docker Airflow execution, preferably from WSL2.
+This DAG is intended for local Airflow execution, preferably from WSL2.
 """
 
 from __future__ import annotations

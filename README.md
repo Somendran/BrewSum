@@ -10,32 +10,74 @@ A production-style ELT batch pipeline using Python, GCS, BigQuery, dbt Core, Gre
 
 ## Architecture
 
-```text
-Open Brewery DB API
-        |
-        v
-Python extract job
-        |
-        v
-GCS data lake: raw/breweries/YYYY-MM-DD/breweries.json
-        |
-        v
-Python load job
-        |
-        v
-BigQuery raw.breweries
-        |
-        v
-dbt staging -> dbt intermediate -> dbt marts
-        |
-        v
-BigQuery mart_brewery_stats
-        |
-        v
-Great Expectations validation report
+```mermaid
+flowchart LR
+    subgraph Source
+        api["Open Brewery DB API"]
+    end
 
-Apache Airflow will orchestrate this flow in Phase 2.
+    subgraph Ingestion
+        extract["Python Extract Job<br/>ingestion/extract.py"]
+        load["Python BigQuery Load Job<br/>ingestion/load.py"]
+    end
+
+    subgraph Cloud_Storage["Cloud Storage"]
+        gcs["GCS Raw Data Lake<br/>gs://brewsum-raw/raw/breweries/YYYY-MM-DD/breweries.json"]
+    end
+
+    subgraph Warehouse
+        raw["BigQuery Raw Table<br/>brewsum.raw.breweries"]
+    end
+
+    subgraph Transformations
+        stg["dbt Staging<br/>dbt_brewery_staging.stg_breweries"]
+        int["dbt Intermediate<br/>dbt_brewery_intermediate.int_breweries_cleaned"]
+        mart["dbt Mart<br/>dbt_brewery_marts.mart_brewery_stats"]
+    end
+
+    subgraph Data_Quality["Data Quality"]
+        dbt_tests["dbt Tests"]
+        ge["Great Expectations<br/>validates raw.breweries<br/>writes local HTML report"]
+    end
+
+    subgraph Orchestration
+        airflow["Airflow Orchestration<br/>brewery_elt_pipeline DAG"]
+    end
+
+    api --> extract --> gcs --> load --> raw --> stg --> int --> mart --> dbt_tests --> ge --> airflow
+    airflow -. schedules .-> extract
+    airflow -. schedules .-> load
+    airflow -. schedules .-> dbt_tests
+    airflow -. schedules .-> ge
 ```
+
+Airflow orchestrates the full pipeline task order, but it does not store raw data, load warehouse tables, transform models, or validate records itself.
+
+## Screenshots
+
+### GCS Raw Landing Zone
+
+![GCS Raw File](docs/images/gcs_raw_file.png)
+
+### BigQuery Raw Table
+
+![BigQuery Raw Table](docs/images/bigquery_raw_table.png)
+
+### dbt Models in BigQuery
+
+![dbt Models](docs/images/dbt_models_bigquery.png)
+
+### dbt Tests Passed
+
+![dbt Tests Passed](docs/images/dbt_tests_passed.png)
+
+### Great Expectations Validation
+
+![Great Expectations Report](docs/images/great_expectations_report.png)
+
+### Airflow DAG Success
+
+![Airflow DAG Success](docs/images/airflow_dag_success.png)
 
 ## Roadmap
 
